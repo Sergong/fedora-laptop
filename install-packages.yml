@@ -10,3 +10,7 @@
         state: present
       loop: "{{ packages }}"
 
+    - name: upgrade all packages
+      dnf:
+        name: "*"
+        state: latest
