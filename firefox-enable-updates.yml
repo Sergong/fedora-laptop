@@ -1,0 +1,12 @@
+---
+- name: Turn Off Firefox DNF updates
+  hosts: myhost
+  connection: local
+
+  tasks:
+    - name: Update /etc/dnf/dnf.conf to exclude firefox from being updated
+      lineinfile:
+        path: /etc/dnf/dnf.conf
+        regexp: "^exclude="
+        state: absent
+

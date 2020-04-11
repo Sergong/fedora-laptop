@@ -1,0 +1,12 @@
+---
+- name: Install All the basic packages
+  hosts: myhost
+  connection: local
+
+  tasks:
+    - name: Install Packages
+      dnf:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages }}"
+

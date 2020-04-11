@@ -1,0 +1,33 @@
+---
+# List of packages to install
+
+packages:
+  - gstreamer1-libav 
+  - gstreamer1-plugins-bad-free 
+  - gstreamer1-plugins-bad-free 
+  - gstreamer1-plugins-bad-free-extras 
+  - gstreamer1-plugins-bad-freeworld 
+  - gstreamer1-plugins-bad-nonfree 
+  - gstreamer1-plugins-good 
+  - gstreamer1-plugins-ugly 
+  - lame-libs 
+  - lame-libs
+  - speedtest-cli
+  - code
+  - compat-openssl10
+  - powershell
+  - '@virtualization'
+  - htop
+  - code
+  - fuse-exfat
+  - gnome-tweaks
+  - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-30.noarch.rpm
+  - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-30.noarch.rpm
+  - hexchat
+  - lastpass-cli
+  - ffmpeg
+  - vim
+  - transmission
+  - curl 
+  - cabextract
+  - google-chrome-stable
