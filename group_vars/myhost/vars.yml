@@ -1,4 +1,7 @@
 ---
+# Set correct python interpreter for future ansible versions
+ansible_python_interpreter: auto
+
 # List of packages to install
 
 packages:
