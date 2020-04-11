@@ -4,7 +4,7 @@
   connection: local
 
   tasks:
-    - name: Update /etc/dnf/dnf.conf to exclude firefox from being updated
+    - name: Update /etc/dnf/dnf.conf to include firefox to be updated
       lineinfile:
         path: /etc/dnf/dnf.conf
         regexp: "^exclude="
