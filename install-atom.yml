@@ -1,11 +1,11 @@
 ---
 - name: Install Atom, this cannot be installed using the package manager on Fedora, Centos
-  hosts: localhost
+  hosts: myhost
 
   vars:
     BASEURL: "https://atom.io/"
     DLURL: "{{ BASEURL}}download/rpm"
-    RPMFILE: "atom.x86_64.rpm"
+    RPMFILE: "atom.rpm"
 
   tasks:
     - name: Gather Package facts
@@ -18,20 +18,40 @@
         warn: false
       register: cur_version
 
+    - name: 'DEBUG: check if ansible_facts.packages.atom exists'
+      block:
+        - name: Set installed_version fact
+          set_fact:
+            installed_version: "{{ ansible_facts['packages']['atom'][0]['version'] }}"
+          when: ansible_facts.packages.atom is defined
+
+        - name: Fail if Atom package is not installed
+          fail:
+          when: ansible_facts.packages.atom is not defined
+
+      rescue:
+        - name: Set installed_version to empty
+          set_fact:
+            installed_version: ""
+
     - name: Tasks to install Atom if the installed version is different from the online version
       block:
         - name: download Atom RPM file
+          become: no
           get_url:
             url: "{{ DLURL }}"
-            dest: "{{ RPMFILE }}"
+            dest: "./{{ RPMFILE }}"
+            checksum: "sha256:eda2d7b7d661dc8006eea0fd1d9e5d0cf17aa9df821b9288b57858454528f1bc"
+            tmp_dest: /tmp
 
         - name: install the atom package
           dnf:
             name: "{{ RPMFILE }}"
             state: latest
+
         - name: Remove the RPM file
           file:
             path: "{{ RPMFILE }}"
             state: absent
 
-      when: cur_version.stdout != ansible_facts['packages']['atom'][0]['version']
+      when: (cur_version.stdout != installed_version)
