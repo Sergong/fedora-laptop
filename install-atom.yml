@@ -1,0 +1,37 @@
+---
+- name: Install Atom, this cannot be installed using the package manager on Fedora, Centos
+  hosts: localhost
+
+  vars:
+    BASEURL: "https://atom.io/"
+    DLURL: "{{ BASEURL}}download/rpm"
+    RPMFILE: "atom.x86_64.rpm"
+
+  tasks:
+    - name: Gather Package facts
+      package_facts:
+        manager: auto
+
+    - name: get current version online
+      shell: curl {{ BASEURL }} 2>/dev/null | grep -e '\"version\">' | grep -o '[0-9]*\.[0-9]*\.[0-9]*'
+      args:
+        warn: false
+      register: cur_version
+
+    - name: Tasks to install Atom if the installed version is different from the online version
+      block:
+        - name: download Atom RPM file
+          get_url:
+            url: "{{ DLURL }}"
+            dest: "{{ RPMFILE }}"
+
+        - name: install the atom package
+          dnf:
+            name: "{{ RPMFILE }}"
+            state: latest
+        - name: Remove the RPM file
+          file:
+            path: "{{ RPMFILE }}"
+            state: absent
+
+      when: cur_version.stdout != ansible_facts['packages']['atom'][0]['version']
