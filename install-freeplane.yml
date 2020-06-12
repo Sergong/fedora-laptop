@@ -1,0 +1,77 @@
+---
+- name: Install Freeplane, this cannot be installed using the package manager on Fedora, Centos
+  hosts: myhost
+
+  vars:
+    DLURL: "https://sourceforge.net/projects/freeplane/files/latest/download"
+    LOCALPATH: "./freeplane_bin.zip"
+    APPPATH: "/opt"
+    DESKTOPPATH: "~/.local/share/applications"
+    FPDESKTOP: "{{ DESKTOPPATH }}/freeplane.desktop"
+    DESKTOPTEMPL: "j2/freeplane-desktop.j2"
+
+  tasks:
+    - name: Check if Freeplane exists in /opt
+      shell: find /opt -name "free*" -type d | grep -e 'freeplane-[0-9]*.[0-9]*.[0-9]*$'
+      register: fp_test
+      changed_when: false
+
+    - name: Download latest FreeMind ZIP file
+      get_url:
+        url: "{{ DLURL }}"
+        dest: "{{ LOCALPATH }}"
+        tmp_dest: /tmp
+      notify: Cleanup
+
+    - name: unzip freeplane
+      unarchive:
+        src: "{{ LOCALPATH }}"
+        dest: "./"
+      register: unarchive_result
+      notify: Cleanup
+
+    - name: Set fp_path fact
+      set_fact:
+        fp_path: "{{ unarchive_result['diff']['prepared'] | regex_search('(freeplane-[0-9]*.[0-9]*.[0-9]*/)') }}"
+
+    - name: Move Freeplane to /opt if the downloaded version isn't already there
+      command:
+        cmd: "mv ./{{ fp_path }} {{ APPPATH }}/{{ fp_path }}"
+        creates: "{{ APPPATH }}/{{ fp_path }}"
+      when: not fp_path in (fp_test.stdout + "/")
+      register: mv_result
+
+    - name: Ensure the Freeplane.sh file is executable
+      file:
+        path: "{{ APPPATH }}/{{ fp_path }}freeplane.sh"
+        mode: '755'
+
+    - name: Ensure an application icon is in the Gnome Appplications for current user
+      become: false
+      template:
+        src: "{{ DESKTOPTEMPL }}"
+        dest: "{{ FPDESKTOP }}"
+        mode: '664'
+      notify: update database
+
+    - name: Removing {{ fp_test.stdout }} directory if a new version was installed
+      file:
+        path: "{{ fp_test.stdout }}"
+        state: absent
+      when: mv_result.changed
+
+
+  handlers:
+    - name: Cleanup
+      file:
+        path: "{{ item  }}"
+        state: absent
+      loop:
+        - "./{{ fp_path }}"
+        - "{{ LOCALPATH  }}"
+
+    - name: update database
+      become: false
+      command: "update-desktop-database {{ DESKTOPPATH }}"
+
+
