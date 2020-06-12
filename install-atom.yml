@@ -17,6 +17,7 @@
       args:
         warn: false
       register: cur_version
+      changed_when: false
 
     - name: 'DEBUG: check if ansible_facts.packages.atom exists'
       block:
