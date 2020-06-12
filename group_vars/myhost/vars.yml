@@ -34,4 +34,4 @@ packages:
   - transmission
   - curl 
   - cabextract
-  - google-chrome-stable
+  - chromium-freeworld
