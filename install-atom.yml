@@ -42,7 +42,6 @@
           get_url:
             url: "{{ DLURL }}"
             dest: "./{{ RPMFILE }}"
-            checksum: "sha256:eda2d7b7d661dc8006eea0fd1d9e5d0cf17aa9df821b9288b57858454528f1bc"
             tmp_dest: /tmp
 
         - name: install the atom package
