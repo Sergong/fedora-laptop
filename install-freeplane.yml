@@ -1,9 +1,10 @@
 ---
-- name: Install Freeplane, this cannot be installed using the package manager on Fedora, Centos
+- name: Install Freeplane as this cannot be installed using the regular package manager on Fedora, Centos
   hosts: myhost
 
   vars:
     DLURL: "https://sourceforge.net/projects/freeplane/files/latest/download"
+    RSSURL: "https://sourceforge.net/projects/freeplane/rss?path=/freeplane%20stable"
     LOCALPATH: "./freeplane_bin.zip"
     APPPATH: "/opt"
     DESKTOPPATH: "~/.local/share/applications"
@@ -11,57 +12,63 @@
     DESKTOPTEMPL: "j2/freeplane-desktop.j2"
 
   tasks:
-    - name: Check if Freeplane exists in {{ APPPATH }}
+    - name: Check current Freeplane version installed in {{ APPPATH }}
       find:
-        path: "/opt"
+        path: "{{ APPPATH }}"
         file_type: directory
         pattern: "freeplane*"
       register: fp_test
 
-    - name: Download latest FreeMind ZIP file
-      get_url:
-        url: "{{ DLURL }}"
-        dest: "{{ LOCALPATH }}"
-        tmp_dest: /tmp
-      notify: Cleanup
-
-    - name: unzip freeplane
-      unarchive:
-        src: "{{ LOCALPATH }}"
-        dest: "./"
-      register: unarchive_result
-      notify: Cleanup
-
-    - name: Set fp_path fact
+    - name: Set Fact online freeplane version
       set_fact:
-        fp_path: "{{ unarchive_result['diff']['prepared'] | regex_search('(freeplane-[0-9]*.[0-9]*.[0-9]*/)') }}"
+        latest: "{{ lookup('url', RSSURL) | regex_search('archive/([0-9]+\\.[0-9]+\\.[0-9]+)/freeplane', '\\1' ) }}"
 
-    - name: Move Freeplane to /opt if the downloaded version isn't already there
-      command:
-        cmd: "mv ./{{ fp_path }} {{ APPPATH }}/{{ fp_path }}"
-        creates: "{{ APPPATH }}/{{ fp_path }}"
-      when: not fp_path in (fp_test['files'][0]['path'] + "/")
-      register: mv_result
+    - name: Install Freeplane if it doesn't exist or there is a newer version
+      block:
+        - name: Download latest Freeplane ZIP file
+          get_url:
+            url: "{{ DLURL }}"
+            dest: "{{ LOCALPATH }}"
+            tmp_dest: /tmp
+          notify: Cleanup
 
-    - name: Ensure the Freeplane.sh file is executable
-      file:
-        path: "{{ APPPATH }}/{{ fp_path }}freeplane.sh"
-        mode: '755'
+        - name: unzip freeplane
+          unarchive:
+            src: "{{ LOCALPATH }}"
+            dest: "./"
+          register: unarchive_result
+          notify: Cleanup
 
-    - name: Ensure an application icon is in the Gnome Appplications for current user
-      become: false
-      template:
-        src: "{{ DESKTOPTEMPL }}"
-        dest: "{{ FPDESKTOP }}"
-        mode: '664'
-      notify: update database
+        - name: Set fp_path fact
+          set_fact:
+            fp_path: "{{ unarchive_result['diff']['prepared'] | regex_search('(freeplane-[0-9]*.[0-9]*.[0-9]*/)') }}"
 
-    - name: Removing {{ fp_test['files'][0]['path'] }} directory if a new version was installed
-      file:
-        path: "{{ fp_test['files'][0]['path'] }}"
-        state: absent
-      when: mv_result.changed and fp_test['files'][0]['path'] is defined
+        - name: Move Freeplane to /opt if the downloaded version isn't already there
+          command:
+            cmd: "mv ./{{ fp_path }} {{ APPPATH }}/{{ fp_path }}"
+            creates: "{{ APPPATH }}/{{ fp_path }}"
+          when: (fp_test['files'][0]['path'] is not defined) or not fp_path in (fp_test['files'][0]['path'] + "/")
+          register: mv_result
 
+        - name: Ensure the Freeplane.sh file is executable
+          file:
+            path: "{{ APPPATH }}/{{ fp_path }}freeplane.sh"
+            mode: '755'
+
+        - name: Ensure an application icon is in Gnome Appplications for current user
+          become: false
+          template:
+            src: "{{ DESKTOPTEMPL }}"
+            dest: "{{ FPDESKTOP }}"
+            mode: '664'
+          notify: update database
+
+        - name: Removing {{ fp_test['files'][0]['path'] }} directory if a new version was installed
+          file:
+            path: "{{ fp_test['files'][0]['path'] }}"
+            state: absent
+          when: mv_result.changed and fp_test['files'][0]['path'] is defined
+      when: (fp_test['files'][0]['path'] is not defined) or (not latest[0] in fp_test['files'][0]['path'])
 
   handlers:
     - name: Cleanup
