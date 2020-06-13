@@ -59,7 +59,7 @@
       file:
         path: "{{ fp_test.stdout }}"
         state: absent
-      when: mv_result.changed
+      when: mv_result.changed and fp_test.stdout is defined
 
 
   handlers:
