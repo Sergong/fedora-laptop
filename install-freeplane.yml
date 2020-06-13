@@ -11,11 +11,12 @@
     DESKTOPTEMPL: "j2/freeplane-desktop.j2"
 
   tasks:
-    - name: Check if Freeplane exists in /opt
-      shell: find /opt -name "free*" -type d | grep -e 'freeplane-[0-9]*.[0-9]*.[0-9]*$'
+    - name: Check if Freeplane exists in {{ APPPATH }}
+      find:
+        path: "/opt"
+        file_type: directory
+        pattern: "freeplane*"
       register: fp_test
-      changed_when: false
-      ignore_errors: true
 
     - name: Download latest FreeMind ZIP file
       get_url:
@@ -39,7 +40,7 @@
       command:
         cmd: "mv ./{{ fp_path }} {{ APPPATH }}/{{ fp_path }}"
         creates: "{{ APPPATH }}/{{ fp_path }}"
-      when: not fp_path in (fp_test.stdout + "/")
+      when: not fp_path in (fp_test['files'][0]['path'] + "/")
       register: mv_result
 
     - name: Ensure the Freeplane.sh file is executable
@@ -55,11 +56,11 @@
         mode: '664'
       notify: update database
 
-    - name: Removing {{ fp_test.stdout }} directory if a new version was installed
+    - name: Removing {{ fp_test['files'][0]['path'] }} directory if a new version was installed
       file:
-        path: "{{ fp_test.stdout }}"
+        path: "{{ fp_test['files'][0]['path'] }}"
         state: absent
-      when: mv_result.changed and fp_test.stdout is defined
+      when: mv_result.changed and fp_test['files'][0]['path'] is defined
 
 
   handlers:
@@ -74,5 +75,3 @@
     - name: update database
       become: false
       command: "update-desktop-database {{ DESKTOPPATH }}"
-
-
