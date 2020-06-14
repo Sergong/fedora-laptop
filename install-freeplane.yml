@@ -47,7 +47,6 @@
           command:
             cmd: "mv ./{{ fp_path }} {{ APPPATH }}/{{ fp_path }}"
             creates: "{{ APPPATH }}/{{ fp_path }}"
-          when: (fp_test['files'][0]['path'] is not defined) or not fp_path in (fp_test['files'][0]['path'] + "/")
           register: mv_result
 
         - name: Ensure the Freeplane.sh file is executable
