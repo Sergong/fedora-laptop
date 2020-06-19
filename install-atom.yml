@@ -1,5 +1,5 @@
 ---
-- name: Install Atom, this cannot be installed using the package manager on Fedora, Centos
+- name: Install or Update Atom, this cannot be installed using the package manager on Fedora, Centos
   hosts: myhost
 
   vars:
