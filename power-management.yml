@@ -1,0 +1,48 @@
+---
+- name: Playbook for Power Management on Fedora with Tuned
+  hosts: myhost
+  connection: local
+  become: true
+
+  vars:
+    lifdict:
+      - regexp: "^[usb]"
+        line: "[usb]"
+      - regexp: "^autosuspend"
+        line: "autosuspend = 1"
+    prof_name: "laptop"
+    prof_path: "/etc/tuned/{{ prof_name }}/tuned.conf"
+    pt_html: "zenbook.html"
+
+  tasks:
+    - name: Ensure tuned-utils is installed
+      dnf:
+        name: tuned-utils
+        state: latest
+
+    - name: Run powertop to create a profile
+      command: "powertop --html={{ pt_html }}"
+      args:
+        creates: "{{ pt_html }}"
+
+    - name: Convert powertop recommendations into tuned profile
+      command: "powertop2tuned -i {{ pt_html }} -n {{ prof_name }}"
+      args:
+        creates: "{{ prof_path }}"
+
+    - name: "Uncomment all lines starting with #/"
+      replace:
+        path: "{{ prof_path }}"
+        regexp: '^#/'
+        replace: '/'
+
+    - name: Add USB autosuspend to file
+      lineinfile:
+        path: "{{ prof_path }}"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop: "{{ lifdict }}"
+
+    - name: Enable the tuned laptop profile
+      command: "tuned-adm profile {{ prof_name }}"
+

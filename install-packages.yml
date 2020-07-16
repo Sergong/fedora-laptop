@@ -14,3 +14,13 @@
       dnf:
         name: "*"
         state: latest
+
+    - name: Enable and Start TLP services
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - dptfxtract
+        - thermald
+

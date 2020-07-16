@@ -35,3 +35,6 @@ packages:
   - curl 
   - cabextract
   - chromium-freeworld
+  - powertop
+  - dptfxtract
+  - thermald
