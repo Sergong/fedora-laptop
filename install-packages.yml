@@ -3,6 +3,13 @@
   hosts: myhost
   connection: local
 
+  vars:
+    lifdict:
+      - regexp: "^fastestmirror"
+        line: "fastestmirror=true"
+      - regexp: "^deltarpm"
+        line: "deltarpm=true"
+
   tasks:
     - name: Install Packages
       dnf:
@@ -15,12 +22,10 @@
         name: "*"
         state: latest
 
-    - name: Enable and Start TLP services
-      service:
-        name: "{{ item }}"
-        state: started
-        enabled: true
-      loop:
-        - dptfxtract
-        - thermald
+    - name: Ensure DeltaRPM and Fastest Mirrors are enabled for DNF
+      lineinfile:
+        path: /etc/dnf/dnf.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop: "{{ lifdict }}"
 

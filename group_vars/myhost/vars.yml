@@ -38,3 +38,4 @@ packages:
   - powertop
   - dptfxtract
   - thermald
+  - cpufrequtils

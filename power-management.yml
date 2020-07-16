@@ -46,3 +46,12 @@
     - name: Enable the tuned laptop profile
       command: "tuned-adm profile {{ prof_name }}"
 
+    - name: Enable and Start TLP services
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - dptfxtract
+        - thermald
+
