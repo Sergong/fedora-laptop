@@ -1,0 +1,67 @@
+---
+- name: Install or Update draw.io, there is a flatpak but it is out of date
+  hosts: myhost
+
+  vars:
+    BASEURL: "https://github.com/jgraph/drawio-desktop/releases/latest/"
+    package_name: "draw.io"
+
+  tasks:
+    - name: Gather Package facts
+      package_facts:
+        manager: auto
+
+    - name: get latest version online
+      shell: curl {{ BASEURL }} | grep -o '[0-9]*\.[0-9]*\.[0-9]*'
+      args:
+        warn: false
+      register: latest_version
+      changed_when: false
+
+    - name: Set RPM File fact
+      set_fact:
+        RPMFILE: "draw.io-x86_64-{{ latest_version.stdout }}.rpm"
+
+    - name: Set download URL fact
+      set_fact:
+        DLURL: "https://github.com/jgraph/drawio-desktop/releases/download/v{{ latest_version.stdout }}/{{ RPMFILE }}"
+
+
+    - name: 'DEBUG: check if ansible_facts.packages.draw.io exists'
+      block:
+        - name: Set installed_version fact
+          set_fact:
+            installed_version: "{{ ansible_facts['packages'][package_name][0]['version'] }}"
+          when: ansible_facts['packages'][package_name] is defined
+
+        - name: Fail if {{ package_name }} package is not installed
+          fail:
+          when: ansible_facts['packages'][package_name] is not defined
+
+      rescue:
+        - name: Set installed_version to empty
+          set_fact:
+            installed_version: ""
+
+    - name: Tasks to install {{ package_name }} if the installed version is different from the online version
+      block:
+        - name: download {{ package_name }} RPM file
+          become: no
+          get_url:
+            url: "{{ DLURL }}"
+            dest: "./{{ RPMFILE }}"
+            tmp_dest: /tmp
+
+        - name: install the {{ package_name }} package
+          dnf:
+            name: "{{ RPMFILE }}"
+            disable_gpg_check: true
+            state: latest
+
+
+        - name: Remove the RPM file
+          file:
+            path: "{{ RPMFILE }}"
+            state: absent
+
+      when: (latest_version.stdout != installed_version)
