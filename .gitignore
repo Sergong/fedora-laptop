@@ -1,2 +1,3 @@
 *.py
+*.rpm
 *-test.yml
