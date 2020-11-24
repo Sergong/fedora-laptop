@@ -15,10 +15,13 @@
     pt_html: "zenbook.html"
 
   tasks:
-    - name: Ensure tuned-utils is installed
+    - name: Ensure tuned-utils and powertop are installed
       dnf:
-        name: tuned-utils
+        name: "{{ item }}"
         state: latest
+      loop:
+        - tuned-utils
+        - powertop
 
     - name: Run powertop to create a profile
       command: "powertop --html={{ pt_html }}"
@@ -54,4 +57,3 @@
       loop:
         - dptfxtract
         - thermald
-
