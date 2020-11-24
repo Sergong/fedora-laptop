@@ -27,13 +27,13 @@
 
     - name: Run powertop to create a profile
       command: "powertop --html={{ pt_html }}"
-      args:
-        creates: "{{ pt_html }}"
+      # args:
+      #   creates: "{{ pt_html }}"
 
     - name: Convert powertop recommendations into tuned profile
       command: "powertop2tuned -i {{ pt_html }} -n {{ prof_name }}"
-      args:
-        creates: "{{ prof_path }}"
+      # args:
+      #   creates: "{{ prof_path }}"
 
     - name: "Uncomment all lines starting with #/"
       replace:
