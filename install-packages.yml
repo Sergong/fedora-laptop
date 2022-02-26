@@ -1,7 +1,6 @@
 ---
 - name: Install All the basic packages
   hosts: myhost
-  connection: local
 
   vars:
     lifdict:
@@ -11,11 +10,18 @@
         line: "deltarpm=true"
 
   tasks:
+    - name: Determine current Fedora version
+      set_fact:
+        cur_version: "{{ lookup('pipe', 'cat /etc/redhat-release | grep -E -o \"[0-9]{2}\"') | int }}"
+
     - name: Install Packages
       dnf:
         name: "{{ item }}"
         state: present
-      loop: "{{ packages }}"
+      loop: 
+        - "{{ packages }}"
+        - "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ cur_version }}.noarch.rpm"
+        - "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ cur_version }}.noarch.rpm"
 
     - name: upgrade all packages
       dnf:
